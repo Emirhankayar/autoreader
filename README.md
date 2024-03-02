@@ -20,7 +20,7 @@ The installation process for Tesseract varies depending on your operating system
 
 You can install Tesseract using the package manager for your distribution. For example, on Ubuntu, you can use `apt`:
 
-### on Ubuntu
+### Ubuntu
 
 ```bash
 sudo apt update
