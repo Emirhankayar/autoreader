@@ -22,37 +22,37 @@ You can install Tesseract using the package manager for your distribution. For e
 
 ### on Ubuntu
 
-\```bash
+```bash
 sudo apt update
 sudo apt install tesseract-ocr
 sudo apt install tesseract-ocr-eng
 sudo apt install tesseract-ocr-ita
-\```
+```
 
-#### on Fedora
+#### Fedora
 
-\```bash
+```bash
 sudo dnf upgrade --refresh
 sudo dnf install tesseract 
 sudo dnf install tesseract-langpack-eng
 sudo dnf install tesseract-langpack-ita
-\```
+```
 
-#### on Arch BTW
-\```bash
+#### Arch BTW
+```bash
 sudo pacman -Syu
 sudo pacman -S tesseract
 sudo pacman -S tesserect-data-eng
 sudo pacman -S tesseract-data-it
-\```
+```
 
 #### macOS
 
 You can install Tesseract using Homebrew:
 
-\```bash
+```bash
 brew install tesseract
-\```
+```
 
 #### Windows
 
@@ -64,40 +64,40 @@ You can download the Tesseract installer from the GitHub releases page:
 
 After installing Python and Tesseract, you can install the following Python dependencies for this project:
 
-\```bash
+```bash
 fuzzywuzzy==0.18.0
 packaging==23.2
 pillow==10.2.0
 pytesseract==0.3.10
 Wand==0.6.13
-\```
+```
 
 ## Installation 
 
 Clone the repository:
 
-\```bash
+```bash
 git clone www.github.com/emirhankayar/autoreader
-\```
+```
 
 Navigate to the project directory:
 
-\```bash
+```bash
 cd ~/autoreader
-\```
+```
 
 Install the necessary dependencies:
 
-\```bash
+```bash
 pip install -r requirements.txt
-\```
+```
 
 ## Current Progress and Usage
 
 Currently, this project does not support automatic scanning of images. Therefore, you need to scan your documents manually using the Google Photo Scan app. After scanning, place your scanned images into the `~/autoreader/images` directory. Then, you can run the program with the following command:
 
-\```bash
+```bash
 cd ~/autoreader && python3 main.py
-\```
+```
 
 The output will be a CSV file located in the `~/autoreader/output` directory.
