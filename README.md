@@ -92,9 +92,12 @@ Install the necessary dependencies:
 pip install -r requirements.txt
 ```
 
-## Current Progress and Usage
+# DISCLAIMER & USAGE
+## For now just 'CONAD' bills are tested out, other grocery bills probably does not have the same pattern as CONAD you might have NULL results.
+Now this project supports auto scanning the files! so you do not have to scan each image yourself anymore. (BE CAREFUL WITH IMAGE QUALITY!)
+YOU CAN RUN IT WITH MULTI IMAGES.
 
-Currently, this project does not support automatic scanning of images. Therefore, you need to scan your documents manually using the Google Photo Scan app. After scanning, place your scanned images into the `~/autoreader/images` directory. Then, you can run the program with the following command:
+Place your images into the `~/autoreader/images` directory. Then, you can run the program with the following command:
 
 ```bash
 cd ~/autoreader && python3 main.py
