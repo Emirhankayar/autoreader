@@ -1,6 +1,10 @@
 # Grocery Bills OCR
 
-This project is specifically designed for Italian grocery shopping bills. It applies a variety of transformations to a given scanned image and then performs OCR text extraction using pytesseract. The accuracy of the readings may vary depending on the quality, exposure, etc., of the image file. It can read most image types, such as .HEIC, PNG, JPG, etc. Currently, I have not implemented auto scanning of the images, so unfortunately, you have to scan each image yourself using the Google Photo Scan app. Therefore, the images must already be scanned.
+This project is specifically designed for Italian grocery shopping bills. It applies a variety of transformations to a given image and then performs image to document scan, OCR text extraction using pytesseract and parsing the words found. The accuracy of the readings may vary depending on the quality, exposure, etc., of the image file. It can read most image types, such as .HEIC, PNG, JPG, etc. 
+
+Currently, program supports the scanning of images so it is implemented, a new update. However, please make sure image has a dark background, so the edge detection can return a legit result. (this will be taken care of in the future so you can use the image of the bill on any background). 
+
+## FOR NOW ONLY TESTED WITH CONAD.
 
 ## Prerequisites
 
