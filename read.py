@@ -1,9 +1,8 @@
 import os
-import io
 import pytesseract
-from multiprocessing import Pool
-from wand.image import Image as WandImage
-from PIL import Image as PI, ImageFilter, ImageOps
+import concurrent.futures
+from PIL import ImageFilter
+
 
 # TESERRACT CONFIG
 # IF YOU ARE A WINDOWS USER GOOD LUCK SETTING THIS PART UP
@@ -15,23 +14,7 @@ tessdata_dir_config = (
     r'--tessdata-dir "/usr/share/tesseract/tessdata" --oem 1 --psm 6 -l ita+eng'
 )
 
-#  LOAD
-
-
-def read_image(image_path):
-    print("LOADING...\n")
-    if image_path.lower().endswith(".heic"):
-        with WandImage(filename=image_path) as img:
-            png_image_bytes = img.make_blob("PNG")
-            png_image = PI.open(io.BytesIO(png_image_bytes))
-        return ImageOps.exif_transpose(png_image)
-    else:
-        return ImageOps.exif_transpose(PI.open(image_path))
-
-
-#
-
-# PREPROCESS
+# PREPROCESS FOR OCR
 
 
 def get_grayscale(image):
@@ -39,19 +22,20 @@ def get_grayscale(image):
     return image.convert("L")
 
 
-def remove_noise(image):
+"""def remove_noise(image):
     print("REMOVING NOISE...\n")
-    return image.filter(ImageFilter.MedianFilter(3))
+    return image.filter(ImageFilter.MedianFilter(1))
 
 
 def thresholding(image):
     print("THRESHOLDING...\n")
-    return image.point(lambda x: 0 if x < 120 else 210, "1")
+    return image.point(lambda x: 0 if x < 120 else 250, "1")
+"""
 
 
 def dilate(image):
     print("DILATING...\n")
-    return image.filter(ImageFilter.MinFilter(1))
+    return image.filter(ImageFilter.MinFilter(3))
 
 
 def erode(image):
@@ -69,12 +53,14 @@ def process_image(pil_image):
     image = pil_image.copy()
 
     image = get_grayscale(image)
-    image = remove_noise(image)
+    # image = remove_noise(image)
+    # image = sharpen_image(image)
     # image = thresholding(image)
     # image = erode(image)
+    # image = dilate(image)
     image = opening(image)
 
-    # image.save('processed_image.png')
+    # image.save("read.png")
 
     return image
 
@@ -84,35 +70,80 @@ def process_image(pil_image):
 # EXTRACT TEXT
 
 
+def resize_to_dpi(image, dpi):
+    # Calculate the factor to resize the image by
+    factor = dpi / 96  # 96 is the standard DPI for web images
+    new_size = (int(image.size[0] * factor), int(image.size[1] * factor))
+
+    # Resize the image
+    resized_image = image.resize(new_size)
+
+    return resized_image
+
+
+def feedback_loop(args):
+    image, dpi = args
+    try:
+        resized_image = resize_to_dpi(image, dpi)
+        whitelist = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ.,/:"
+        config_options = (
+            tessdata_dir_config + f" -c tessedit_char_whitelist={whitelist}"
+        )
+        data = pytesseract.image_to_data(
+            resized_image,
+            config=config_options,
+            output_type=pytesseract.Output.DATAFRAME,
+        )
+        data = data[data.conf != -1]
+        lines = (
+            data.groupby(["page_num", "block_num", "par_num", "line_num"])["text"]
+            .apply(lambda x: " ".join(list(x)))
+            .tolist()
+        )
+        confs = (
+            data.groupby(["page_num", "block_num", "par_num", "line_num"])["conf"]
+            .mean()
+            .tolist()
+        )
+        mean_line_conf = sum(confs) / len(confs) if confs else 0
+        text = " ".join(lines)
+        print(f"DPI: {dpi}, Mean line confidence: {mean_line_conf}")
+        return dpi, mean_line_conf, text
+    except Exception as e:
+        print(f"An error occurred at DPI {dpi}: {e}")
+        return dpi, 0, ""
+
+
 def extract_text(image):
     print("EXTRACTING TEXT...\n")
-    whitelist = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ.,/:"
-    config_options = tessdata_dir_config + f" -c tessedit_char_whitelist={whitelist}"
-    return pytesseract.image_to_string(image, config=config_options)
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        dpi_values = range(
+            30, 301, 10
+        )  # DPI values from 100 to 300 in increments of 10
+        results = list(
+            executor.map(feedback_loop, [(image, dpi) for dpi in dpi_values])
+        )
+    best_result = max(
+        results, key=lambda x: x[1]
+    )  # Get the result with the highest mean line confidence
+    print(f"The best DPI for the image is: {best_result[0]}")
+    print(f"The number of iterations to find the best DPI was: {len(results)}")
+    return best_result[2]  # Return the text from the best result
 
 
-def post_process(text):
-    whitelist = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ.,/:"
-    return "".join(c for c in text if c in whitelist or c.isspace())
+def read_image(image):
+    processed_image = process_image(image)
+    text = extract_text(processed_image)
+    # processed_image.show()
+    return text
 
 
-def process_image_file(filename):
-    directory = "./images"  # replace with your directory
-    if filename.endswith(
-        (".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".gif", ".heic", ".HEIC")
-    ):
-        image_path = os.path.join(directory, filename)
-        image = read_image(image_path)
-        processed_image = process_image(image)
-        text = extract_text(processed_image)
-        return text
-
-
-def read_and_extract_text(directory):
+# TODO IMPLEMENT MULTIPROCESSING FOR MULTI EXTRACTING
+"""def read_and_extract_text(directory):
     with Pool() as pool:
         filenames = os.listdir(directory)
-        texts = pool.map(process_image_file, filenames)
-    return texts
+        texts = pool.map(read_image, filenames)
+    return texts"""
 
 
 #
