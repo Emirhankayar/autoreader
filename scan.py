@@ -114,7 +114,7 @@ def get_warp_threshold(orig, screenCnt, ratio):
 
 
 def scan_image(image_path):
-    print("SCANNING...\n")
+    # print("SCANNING...\n")
     image, orig, ratio = get_image(image_path)
     image = process_image(image)
     cnts = get_contours(image)

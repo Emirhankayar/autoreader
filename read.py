@@ -18,7 +18,7 @@ tessdata_dir_config = (
 
 
 def get_grayscale(image):
-    print("GRAYSCALE...\n")
+    # print("GRAYSCALE...\n")
     return image.convert("L")
 
 
@@ -34,22 +34,22 @@ def thresholding(image):
 
 
 def dilate(image):
-    print("DILATING...\n")
+    # print("DILATING...\n")
     return image.filter(ImageFilter.MinFilter(3))
 
 
 def erode(image):
-    print("ERODING...\n")
+    # print("ERODING...\n")
     return image.filter(ImageFilter.MaxFilter(1))
 
 
 def opening(image):
-    print("DILATING AND ERODING...\n")
+    # print("DILATING AND ERODING...\n")
     return dilate(erode(image))
 
 
 def process_image(pil_image):
-    print("PROCESSING...\n")
+    # print("PROCESSING...\n")
     image = pil_image.copy()
 
     image = get_grayscale(image)
@@ -85,10 +85,11 @@ def feedback_loop(args):
     image, dpi = args
     try:
         resized_image = resize_to_dpi(image, dpi)
-        whitelist = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ.,/:"
-        config_options = (
-            tessdata_dir_config + f" -c tessedit_char_whitelist={whitelist}"
-        )
+        # whitelist = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ.,/:"
+        # config_options = (
+        #    tessdata_dir_config + f" -c tessedit_char_whitelist={whitelist}"
+        # )
+        config_options = tessdata_dir_config
         data = pytesseract.image_to_data(
             resized_image,
             config=config_options,
@@ -97,7 +98,7 @@ def feedback_loop(args):
         data = data[data.conf != -1]
         lines = (
             data.groupby(["page_num", "block_num", "par_num", "line_num"])["text"]
-            .apply(lambda x: " ".join(list(x)))
+            .apply(lambda x: " ".join(x))
             .tolist()
         )
         confs = (
@@ -105,30 +106,33 @@ def feedback_loop(args):
             .mean()
             .tolist()
         )
-        mean_line_conf = sum(confs) / len(confs) if confs else 0
-        text = " ".join(lines)
-        print(f"DPI: {dpi}, Mean line confidence: {mean_line_conf}")
-        return dpi, mean_line_conf, text
+        return dpi, lines, confs
     except Exception as e:
         print(f"An error occurred at DPI {dpi}: {e}")
-        return dpi, 0, ""
+        return dpi, [], []
 
 
 def extract_text(image):
-    print("EXTRACTING TEXT...\n")
+    # print("EXTRACTING TEXT...\n")
+    dpi_values = range(30, 301, 30)  # DPI values from 30 to 300
+    best_lines = {}
+
     with concurrent.futures.ProcessPoolExecutor() as executor:
-        dpi_values = range(
-            30, 301, 10
-        )  # DPI values from 100 to 300 in increments of 10
-        results = list(
-            executor.map(feedback_loop, [(image, dpi) for dpi in dpi_values])
-        )
-    best_result = max(
-        results, key=lambda x: x[1]
-    )  # Get the result with the highest mean line confidence
-    print(f"The best DPI for the image is: {best_result[0]}")
-    print(f"The number of iterations to find the best DPI was: {len(results)}")
-    return best_result[2]  # Return the text from the best result
+        for dpi in dpi_values:
+            results = list(executor.map(feedback_loop, [(image, dpi)]))
+            for dpi, lines, confs in results:
+                for i, (line, conf) in enumerate(zip(lines, confs)):
+                    if i not in best_lines or best_lines[i][1] < conf:
+                        best_lines[i] = (line, conf)
+
+    # Combine the best lines to form the best text
+    best_text = "\n".join(line for line, _ in best_lines.values())
+
+    # #print out each line with its confidence
+    # for i, (line, conf) in best_lines.items():
+    # print(f"Line {i+1}: {line} (confidence: {conf}%)")
+
+    return best_text
 
 
 def read_image(image):
@@ -136,14 +140,6 @@ def read_image(image):
     text = extract_text(processed_image)
     # processed_image.show()
     return text
-
-
-# TODO IMPLEMENT MULTIPROCESSING FOR MULTI EXTRACTING
-"""def read_and_extract_text(directory):
-    with Pool() as pool:
-        filenames = os.listdir(directory)
-        texts = pool.map(read_image, filenames)
-    return texts"""
 
 
 #

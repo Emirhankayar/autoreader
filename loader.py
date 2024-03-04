@@ -5,7 +5,7 @@ import numpy as np
 
 
 def load_image(image_path):
-    print("LOADING...\n")
+    # print("LOADING...\n")
     if image_path.lower().endswith(".heic"):
         with WandImage(filename=image_path) as img:
             png_image_bytes = img.make_blob("PNG")
