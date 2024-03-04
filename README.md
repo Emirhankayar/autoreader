@@ -70,10 +70,19 @@ After installing Python and Tesseract, you can install the following Python depe
 
 ```bash
 fuzzywuzzy==0.18.0
+imageio==2.34.0
+imutils==0.5.4
+lazy_loader==0.3
+networkx==3.2.1
+numpy==1.26.4
+opencv-python==4.9.0.80
 packaging==23.2
 pillow==10.2.0
 pytesseract==0.3.10
-Wand==0.6.13
+scikit-image==0.22.0
+scipy==1.12.0
+tifffile==2024.2.12
+tqdm==4.66.2
 ```
 
 ## Installation 
